@@ -15,7 +15,7 @@ const STOP_WORDS = new Set([
   "to", "of", "for", "from", "and", "or", "what", "which", "how",
   "does", "do", "this", "that", "with", "about", "me", "tell",
   "please", "my", "your", "these", "those", "its", "can", "you",
-  "could", "would", "should", "it", "be", "their", "them", "all",
+  "could", "would", "should", "it", "be", "their", "them", "all","use", "using", "used"
 ]);
 
 export interface DocumentChunk {
@@ -30,12 +30,38 @@ export interface SearchResult extends DocumentChunk {
   score: number;
 }
 
-function tokenize(text: string): string[] {
-  // Simple English-word matching; use embeddings for multilingual semantic search.
-  return (text.toLowerCase().match(/[a-z0-9]+/g) ?? []).filter(
-    (word) => word.length >= 2 && !STOP_WORDS.has(word)
-  );
+
+function normalizeWord(word: string): string {
+  // technologies → technology
+  // policies → policy
+  if (word.length > 4 && word.endsWith("ies")) {
+    return word.slice(0, -3) + "y";
+  }
+
+  // requirements → requirement
+  // frameworks → framework
+  // choices → choice
+  if (
+    word.length > 4 &&
+    word.endsWith("s") &&
+    !/(ss|us|is)$/.test(word)
+  ) {
+    return word.slice(0, -1);
+  }
+
+  return word;
 }
+
+function tokenize(text: string): string[] {
+  return (text.toLowerCase().match(/[a-z0-9]+/g) ?? [])
+    .map(normalizeWord)
+    .filter(
+      (word) =>
+        word.length >= 2 &&
+        !STOP_WORDS.has(word)
+    );
+}
+
 
 function isOverviewQuestion(question: string): boolean {
   const q = question.toLowerCase().replace(/[^a-z0-9\s]/g, " ");

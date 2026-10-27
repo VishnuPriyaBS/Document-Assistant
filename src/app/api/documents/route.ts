@@ -16,7 +16,7 @@ const STORAGE_DIR = join(
   ".local-documents"
 );
 
-const MAX_FILE_SIZE = 1 * 1024 * 1024;
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 async function ensureStorage() {
   await mkdir(STORAGE_DIR, { recursive: true });
