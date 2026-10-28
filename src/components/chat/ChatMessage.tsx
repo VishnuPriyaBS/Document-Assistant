@@ -15,8 +15,6 @@ export default function ChatMessage({
   isStreaming = false,
 }: Props) {
   const isUser = message.role === "user";
-
-  // Split AI text around source IDs like [S1].
   const parts = message.content.split(/(\[S\d+\])/g);
 
   return (
@@ -26,12 +24,12 @@ export default function ChatMessage({
       }`}
     >
       <div
-        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-          isUser
-            ? "bg-blue-600 text-white"
-            : "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-white"
-        }`}
         aria-hidden="true"
+        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
+          isUser
+            ? "bg-primary text-on-primary"
+            : "bg-primary-soft text-on-primary-soft"
+        }`}
       >
         {isUser ? (
           <User className="h-5 w-5" />
@@ -41,61 +39,64 @@ export default function ChatMessage({
       </div>
 
       <div className="min-w-0 max-w-[85%] flex-1">
-        <p className="mb-1 text-xs font-medium text-slate-500">
+        <p className="mb-2 text-xs font-semibold text-muted-foreground">
           {isUser ? "You" : "AI Assistant"}
         </p>
 
         {(message.content || isStreaming) && (
-        <div
-          className={`rounded-2xl px-4 py-3 text-left text-sm leading-7 ${
-            isUser
-              ? "bg-blue-600 text-white"
-              : "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100"
-          }`}
-        >
-          <p className="whitespace-pre-wrap break-words">
-            {parts.map((part, index) => {
-              const source = message.sources?.find(
-                (item) => `[${item.id}]` === part
-              );
+          <div
+            className={`rounded-2xl px-4 py-3 text-sm leading-7 shadow-sm ${
+              isUser
+                ? "bg-primary text-on-primary"
+                : "border border-app-border bg-surface-muted text-foreground"
+            }`}
+          >
+            <p className="whitespace-pre-wrap break-words">
+              {parts.map((part, index) => {
+                const source = message.sources?.find(
+                  (item) => `[${item.id}]` === part
+                );
 
-              if (!source) {
-                return <span key={index}>{part}</span>;
-              }
+                if (!source) {
+                  return (
+                    <span key={index}>{part}</span>
+                  );
+                }
 
-              return (
-                <a
-                  key={index}
-                  href={source.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title={`${source.documentName}, page ${source.pageNumber}`}
-                  className="font-semibold text-blue-600 underline underline-offset-2 dark:text-blue-400"
-                >
-                  {part}
-                </a>
-              );
-            })}
+                return (
+                  <a
+                    key={index}
+                    href={source.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={`${source.documentName}, page ${source.pageNumber}`}
+                    className="font-semibold text-primary underline underline-offset-2 hover:opacity-80"
+                  >
+                    {part}
+                  </a>
+                );
+              })}
 
-            {isStreaming && (
-              <span
-                aria-hidden="true"
-                className="ml-1 inline-block h-4 w-1 animate-pulse bg-blue-500 align-middle"
-              />
-            )}
-          </p>
-
-          {isStreaming && !message.content && (
-            <p className="mt-2 text-xs text-slate-500">
-              Searching documents and preparing answer...
+              {isStreaming && (
+                <span
+                  aria-hidden="true"
+                  className="ml-1 inline-block h-4 w-1 animate-pulse bg-primary align-middle"
+                />
+              )}
             </p>
-          )}
-        </div>
+
+            {isStreaming && !message.content && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                Searching your documents and preparing an answer...
+              </p>
+            )}
+          </div>
         )}
+
         {message.error && (
           <p
             role="alert"
-            className="mt-2 text-sm text-red-600 dark:text-red-400"
+            className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200"
           >
             {message.error}
           </p>
@@ -105,9 +106,9 @@ export default function ChatMessage({
           !isStreaming &&
           message.sources &&
           message.sources.length > 0 && (
-            <div className="mt-3 space-y-2">
-              <p className="text-xs font-semibold text-slate-500">
-                Retrieved source passages
+            <div className="mt-4 space-y-2">
+              <p className="text-xs font-semibold text-muted-foreground">
+                Source references
               </p>
 
               <ul className="space-y-2">
@@ -117,17 +118,22 @@ export default function ChatMessage({
                       href={source.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-start gap-2 rounded-lg border border-slate-200 p-3 text-xs hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-blue-500 dark:border-slate-700 dark:hover:bg-slate-800"
+                      className="flex items-start gap-3 rounded-xl border border-app-border bg-surface p-3 text-xs transition-colors hover:bg-surface-muted"
                     >
-                      <ExternalLink className="h-4 w-4 shrink-0 text-blue-600" />
+                      <ExternalLink
+                        className="h-4 w-4 shrink-0 text-primary"
+                        aria-hidden="true"
+                      />
 
                       <span className="min-w-0">
-                        <span className="block font-semibold text-blue-600 dark:text-blue-400">
-                          [{source.id}] {source.documentName}
-                          {" — "}Page {source.pageNumber}
+                        <span className="block break-words font-semibold text-primary">
+                          [{source.id}]{" "}
+                          {source.documentName}
+                          {" — "}Page{" "}
+                          {source.pageNumber}
                         </span>
 
-                        <span className="mt-1 block break-words text-slate-500 dark:text-slate-400">
+                        <span className="mt-2 block break-words leading-5 text-muted-foreground">
                           {source.snippet}
                         </span>
                       </span>

@@ -1,26 +1,90 @@
+
 @import "tailwindcss";
 
+/* Enable user-controlled dark mode */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+
+  --background: #f5f7fc;
+  --foreground: #17243b;
+  --surface: #ffffff;
+  --surface-muted: #ecf1fa;
+  --border-color: #d7e1f0;
+  --muted-foreground: #50617a;
+
+  --primary: #4338ca;
+  --primary-hover: #3730a3;
+  --on-primary: #ffffff;
+  --primary-soft: #e9e9ff;
+  --on-primary-soft: #312e81;
+
+  --focus-ring: #4f46e5;
 }
 
+html.dark {
+  color-scheme: dark;
+
+  --background: #0b1224;
+  --foreground: #edf2ff;
+  --surface: #142039;
+  --surface-muted: #20304e;
+  --border-color: #364764;
+  --muted-foreground: #bfcee5;
+
+  --primary: #a5b4fc;
+  --primary-hover: #c7d2fe;
+  --on-primary: #121a31;
+  --primary-soft: #292b59;
+  --on-primary-soft: #e0e7ff;
+
+  --focus-ring: #a5b4fc;
+}
+
+/* Reusable Tailwind design tokens */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-app-border: var(--border-color);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-on-primary: var(--on-primary);
+  --color-primary-soft: var(--primary-soft);
+  --color-on-primary-soft: var(--on-primary-soft);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--primary-soft);
+  color: var(--on-primary-soft);
+}
+
+/* Respect reduced-motion accessibility preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

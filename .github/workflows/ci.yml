@@ -32,6 +32,9 @@ jobs:
       - name: TypeScript check
         run: npx tsc --noEmit
 
+      - name: Run automated tests
+        run: npm test
+
       - name: Production build
         env:
           OPENAI_MOCK_MODE: "true"

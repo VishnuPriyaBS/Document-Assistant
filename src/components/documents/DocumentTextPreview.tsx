@@ -5,6 +5,7 @@ import { useState } from "react";
 import {
   ChevronDown,
   ChevronUp,
+  FileText,
   LoaderCircle,
 } from "lucide-react";
 
@@ -19,6 +20,7 @@ interface PreviewResponse {
   totalCharacters: number;
   preview: PreviewPage[];
   warning: string | null;
+  error?: string;
 }
 
 interface Props {
@@ -41,7 +43,6 @@ export default function DocumentTextPreview({
     }
 
     setOpen(true);
-
     if (data) return;
 
     setLoading(true);
@@ -53,7 +54,8 @@ export default function DocumentTextPreview({
         { cache: "no-store" }
       );
 
-      const result = await response.json();
+      const result =
+        (await response.json()) as PreviewResponse;
 
       if (!response.ok) {
         throw new Error(
@@ -61,7 +63,7 @@ export default function DocumentTextPreview({
         );
       }
 
-      setData(result as PreviewResponse);
+      setData(result);
     } catch (err) {
       setError(
         err instanceof Error
@@ -80,9 +82,14 @@ export default function DocumentTextPreview({
         onClick={() => void handleToggle()}
         aria-expanded={open}
         aria-controls={`preview-${documentId}`}
-        className="inline-flex items-center gap-1 rounded text-sm font-medium text-blue-600 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2"
+        className="inline-flex items-center gap-2 rounded-lg px-1 py-1 text-sm font-semibold text-primary hover:underline"
       >
-        {open ? "Hide Text" : "Preview Text"}
+        <FileText
+          className="h-4 w-4"
+          aria-hidden="true"
+        />
+
+        {open ? "Hide text preview" : "Preview text"}
 
         {open ? (
           <ChevronUp className="h-4 w-4" />
@@ -95,50 +102,63 @@ export default function DocumentTextPreview({
         <section
           id={`preview-${documentId}`}
           aria-label="Extracted document text"
-          className="mt-3 space-y-3 rounded-lg border bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800"
+          className="mt-3 space-y-4 rounded-xl border border-app-border bg-surface-muted p-4"
         >
           {loading && (
-            <p className="flex items-center gap-2 text-sm">
-              <LoaderCircle className="h-4 w-4 animate-spin" />
+            <p
+              role="status"
+              className="flex items-center gap-2 text-sm text-muted-foreground"
+            >
+              <LoaderCircle
+                className="h-4 w-4 animate-spin"
+                aria-hidden="true"
+              />
               Reading document...
             </p>
           )}
 
           {error && (
-            <p role="alert" className="text-sm text-red-600">
+            <p
+              role="alert"
+              className="text-sm text-red-700 dark:text-red-300"
+            >
               {error}
             </p>
           )}
 
           {data && (
             <>
-              <p className="text-sm font-medium">
+              <p className="text-sm font-semibold">
                 {data.totalPages} page(s) ·{" "}
                 {data.totalCharacters.toLocaleString()} characters
               </p>
 
               {data.warning && (
-                <p className="text-sm text-amber-700 dark:text-amber-300">
+                <p className="rounded-lg border border-amber-300/50 bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-200">
                   {data.warning}
                 </p>
               )}
 
               {data.preview.map((page) => (
-                <div key={page.pageNumber}>
-                  <p className="mb-2 text-xs font-semibold text-slate-500">
+                <div
+                  key={page.pageNumber}
+                  className="rounded-xl border border-app-border bg-surface p-4"
+                >
+                  <p className="mb-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">
                     Page {page.pageNumber}
                   </p>
 
-                  <p className="whitespace-pre-wrap break-words text-sm leading-6">
+                  <p className="whitespace-pre-wrap break-words text-sm leading-7">
                     {page.text}
                   </p>
                 </div>
               ))}
 
               {data.preview.length > 0 && (
-                <p className="text-xs text-slate-500">
-                  Showing up to 700 characters from
-                  each of the first 3 readable pages.
+                <p className="text-xs leading-5 text-muted-foreground">
+                  Showing up to 700 characters
+                  from each of the first three
+                  readable pages.
                 </p>
               )}
             </>

@@ -223,49 +223,69 @@ export default function ChatPage() {
     }
   }
 
-  return (
-    <section className="space-y-4">
-      <div>
-        <h2 className="text-2xl font-bold">AI Document Assistant</h2>
-        <p className="mt-1 text-sm text-slate-500">
-          Upload or select documents here, then ask questions about them.
-        </p>
-      </div>
-      <p className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-200">
-        Responses use the documents selected for this chat. Verify key details using source links.
-      </p>
 
-      <div className="grid gap-4 lg:grid-cols-[230px_minmax(0,1fr)]">
-        <ChatSidebar
-          sessions={sessions}
-          activeSessionId={activeSessionId}
-          disabled={isBusy}
-          onNewChat={handleNewChat}
-          onSelectSession={handleSelectSession}
+return (
+  <section className="space-y-5">
+    <div>
+      <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+        AI Document Assistant
+      </h2>
+
+      <p className="mt-2 text-sm text-muted-foreground">
+        Upload or choose your documents, then ask questions
+        and explore answers with source references.
+      </p>
+    </div>
+
+    <div className="rounded-xl border border-app-border bg-primary-soft px-4 py-3 text-sm leading-6 text-on-primary-soft">
+      Responses use the documents selected for this chat.
+      Verify important information using the source links.
+    </div>
+
+    <div className="grid items-start gap-4 lg:grid-cols-[230px_minmax(0,1fr)]">
+      <ChatSidebar
+        sessions={sessions}
+        activeSessionId={activeSessionId}
+        disabled={isBusy}
+        onNewChat={handleNewChat}
+        onSelectSession={handleSelectSession}
+      />
+
+      <div className="flex h-[70dvh] min-h-[360px] min-w-0 flex-col overflow-hidden rounded-2xl border border-app-border bg-surface shadow-sm lg:h-[min(78dvh,800px)] lg:min-h-[560px]">
+        <ChatDocumentPicker
+          selectedIds={selectedIds}
+          locked={locked}
+          onToggle={handleToggleDocument}
         />
 
-        <div className="flex h-[min(75vh,800px)] min-h-[550px] min-w-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
-          <ChatDocumentPicker
-            selectedIds={selectedIds}
-            locked={locked}
-            onToggle={handleToggleDocument}
-          />
-          <ChatWindow
-            messages={activeSession?.messages ?? []}
-            isStreaming={!!streamingSessionId && streamingSessionId === activeSessionId}
-          />
-          {selectionError && (
-            <p role="alert" className="px-4 py-2 text-sm text-red-600">
-              {selectionError}
-            </p>
-          )}
-          <ChatInput
-            onSend={(message) => { void handleSend(message); }}
-            isStreaming={isBusy}
-            canSend={canSend}
-          />
-        </div>
+        <ChatWindow
+          key={activeSessionId ?? "draft"}
+          messages={activeSession?.messages ?? []}
+          isStreaming={
+            !!streamingSessionId &&
+            streamingSessionId === activeSessionId
+          }
+        />
+
+        {selectionError && (
+          <p
+            role="alert"
+            className="mx-4 mb-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200"
+          >
+            {selectionError}
+          </p>
+        )}
+
+        <ChatInput
+          onSend={(message) => {
+            void handleSend(message);
+          }}
+          isStreaming={isBusy}
+          canSend={canSend}
+        />
       </div>
-    </section>
-  );
+    </div>
+  </section>
+);
+
 }

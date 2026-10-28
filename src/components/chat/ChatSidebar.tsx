@@ -1,11 +1,8 @@
 
 "use client";
 
-import { MessageSquare, Plus } from "lucide-react";
-
-import type {
-  ChatSession,
-} from "@/lib/redux/slices/chatSlice";
+import { MessageSquare, Plus, MessagesSquare } from "lucide-react";
+import type { ChatSession } from "@/lib/redux/slices/chatSlice";
 
 interface Props {
   sessions: ChatSession[];
@@ -25,52 +22,70 @@ export default function ChatSidebar({
   return (
     <aside
       aria-label="Conversation history"
-      className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900"
+      className="rounded-2xl border border-app-border bg-surface p-4 shadow-sm"
     >
       <button
         type="button"
         onClick={onNewChat}
         disabled={disabled}
-        className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-3 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-on-primary transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
       >
-        <Plus className="h-4 w-4" />
+        <Plus className="h-4 w-4" aria-hidden="true" />
         New Chat
       </button>
 
-      <h2 className="mt-6 mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
-        Recent Conversations
-      </h2>
+      <div className="mb-3 mt-6 flex items-center gap-2">
+        <MessagesSquare
+          className="h-4 w-4 text-muted-foreground"
+          aria-hidden="true"
+        />
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Recent Conversations
+        </h2>
+      </div>
 
       {sessions.length === 0 ? (
-        <p className="text-sm text-slate-500">
-          No conversations yet.
-        </p>
+        <div className="rounded-xl border border-dashed border-app-border bg-surface-muted p-4 text-center">
+          <MessageSquare
+            className="mx-auto mb-3 h-7 w-7 text-muted-foreground"
+            aria-hidden="true"
+          />
+          <p className="text-sm font-medium">
+            No conversations yet
+          </p>
+          <p className="mt-2 text-xs leading-5 text-muted-foreground">
+            Select a document and ask your first question.
+          </p>
+        </div>
       ) : (
-        <ul className="space-y-1">
-          {sessions.map((session) => (
-            <li key={session.id}>
-              <button
-                type="button"
-                onClick={() =>
-                  onSelectSession(session.id)
-                }
-                disabled={disabled}
-                aria-pressed={
-                  activeSessionId === session.id
-                }
-                className={`flex w-full items-center gap-2 rounded-lg px-3 py-3 text-left text-sm disabled:opacity-60 ${
-                  activeSessionId === session.id
-                    ? "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300"
-                    : "hover:bg-slate-100 dark:hover:bg-slate-800"
-                }`}
-              >
-                <MessageSquare className="h-4 w-4 shrink-0" />
-                <span className="truncate">
-                  {session.title}
-                </span>
-              </button>
-            </li>
-          ))}
+        <ul className="max-h-40 space-y-1 overflow-y-auto lg:max-h-96">
+          {sessions.map((session) => {
+            const active = activeSessionId === session.id;
+
+            return (
+              <li key={session.id}>
+                <button
+                  type="button"
+                  disabled={disabled}
+                  aria-current={active ? "true" : undefined}
+                  onClick={() => onSelectSession(session.id)}
+                  className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm transition-colors disabled:opacity-50 ${
+                    active
+                      ? "bg-primary-soft font-semibold text-on-primary-soft"
+                      : "text-muted-foreground hover:bg-surface-muted hover:text-foreground"
+                  }`}
+                >
+                  <MessageSquare
+                    className="h-4 w-4 shrink-0"
+                    aria-hidden="true"
+                  />
+                  <span className="min-w-0 truncate">
+                    {session.title}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
         </ul>
       )}
     </aside>

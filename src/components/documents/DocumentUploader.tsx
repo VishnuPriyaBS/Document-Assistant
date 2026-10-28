@@ -320,8 +320,9 @@ const libraryDocuments = documents.filter(
     }
   }
 
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-7">
       {/* Upload area */}
       <div
         onDragOver={(event) => {
@@ -330,10 +331,10 @@ const libraryDocuments = documents.filter(
         }}
         onDragLeave={() => setIsDragging(false)}
         onDrop={handleDrop}
-        className={`rounded-xl border-2 border-dashed p-8 text-center transition-colors focus-within:ring-2 focus-within:ring-blue-500 ${
+        className={`rounded-2xl border-2 border-dashed p-6 text-center transition-colors sm:p-10 ${
           isDragging
-            ? "border-blue-500 bg-blue-50 dark:bg-blue-950"
-            : "border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900"
+            ? "border-primary bg-primary-soft"
+            : "border-app-border bg-surface hover:border-primary"
         }`}
       >
         <input
@@ -347,61 +348,61 @@ const libraryDocuments = documents.filter(
 
         <label
           htmlFor="document-file-input"
-          className="block cursor-pointer"
+          className="block cursor-pointer rounded-xl"
         >
-          <CloudUpload
-            className="mx-auto mb-4 h-12 w-12 text-blue-600"
-            aria-hidden="true"
-          />
+          <span className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-soft text-on-primary-soft">
+            <CloudUpload
+              className="h-8 w-8"
+              aria-hidden="true"
+            />
+          </span>
 
-          <p className="text-lg font-semibold">
+          <span className="block text-lg font-semibold text-foreground">
             Drag and drop documents here
-          </p>
+          </span>
 
-          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-            PDF or TXT files, maximum 10 MB each
-          </p>
+          <span className="mt-2 block text-sm leading-6 text-muted-foreground">
+            Or browse your computer to add files
+          </span>
 
-          <span className="mt-5 inline-flex rounded-lg bg-blue-600 px-5 py-2.5 font-medium text-white">
+          <span className="mt-1 block text-xs text-muted-foreground">
+            PDF or TXT · Maximum 10 MB per file
+          </span>
+
+          <span className="mt-5 inline-flex items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-on-primary transition-colors hover:bg-primary-hover">
             Browse Files
           </span>
         </label>
       </div>
 
-      {/* Document library */}
-
-      {/* Upload issues */}
+      {/* Upload errors */}
       {failedDocuments.length > 0 && (
         <section
           aria-labelledby="upload-errors-heading"
-          className="rounded-xl border border-red-200 bg-red-50 p-5 dark:border-red-900 dark:bg-red-950/30"
+          className="rounded-2xl border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950 sm:p-5"
         >
-          <div className="mb-4 flex items-center gap-2">
+          <h3
+            id="upload-errors-heading"
+            className="mb-3 flex items-center gap-2 font-semibold text-red-800 dark:text-red-200"
+          >
             <AlertCircle
-              className="h-5 w-5 text-red-600"
+              className="h-5 w-5"
               aria-hidden="true"
             />
+            Upload issues ({failedDocuments.length})
+          </h3>
 
-            <h3
-              id="upload-errors-heading"
-              className="font-semibold text-red-800 dark:text-red-300"
-            >
-              Upload Issues ({failedDocuments.length})
-            </h3>
-          </div>
-
-          <ul className="space-y-3">
+          <ul className="space-y-2">
             {failedDocuments.map((doc) => (
               <li
                 key={doc.id}
-                className="flex items-start justify-between gap-3 rounded-lg border border-red-200 bg-white p-3 dark:border-red-900 dark:bg-slate-900"
+                className="flex items-start gap-3 rounded-xl border border-red-200 bg-surface p-3 dark:border-red-900"
               >
-                <div className="min-w-0">
-                  <p className="break-all text-sm font-medium">
+                <div className="min-w-0 flex-1">
+                  <p className="break-words text-sm font-semibold">
                     {doc.name}
                   </p>
-
-                  <p className="mt-1 text-sm text-red-700 dark:text-red-400">
+                  <p className="mt-1 text-sm text-red-700 dark:text-red-300">
                     {doc.error ?? "Upload failed."}
                   </p>
                 </div>
@@ -410,85 +411,148 @@ const libraryDocuments = documents.filter(
                   type="button"
                   aria-label={`Dismiss error for ${doc.name}`}
                   title="Dismiss error"
-                  onClick={() => dispatch(removeDocument(doc.id))}
-                  className="rounded-md p-1 text-slate-500 hover:bg-red-100 hover:text-red-700 focus-visible:outline-2 focus-visible:outline-blue-500"
+                  onClick={() =>
+                    dispatch(removeDocument(doc.id))
+                  }
+                  className="rounded-lg p-2 text-muted-foreground hover:bg-surface-muted hover:text-foreground"
                 >
-                  <X className="h-5 w-5" />
+                  <X
+                    className="h-4 w-4"
+                    aria-hidden="true"
+                  />
                 </button>
               </li>
             ))}
           </ul>
         </section>
       )}
- 
-      <section aria-labelledby="uploaded-documents-heading">
-        <h3
-          id="uploaded-documents-heading"
-          className="mb-4 text-lg font-semibold"
-        >
-          Documents ({libraryDocuments.length})
-        </h3>
+
+      {/* Library */}
+      <section
+        aria-labelledby="uploaded-documents-heading"
+        className="space-y-4"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3
+              id="uploaded-documents-heading"
+              className="text-xl font-semibold tracking-tight"
+            >
+              Your documents
+            </h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {libraryDocuments.length} file
+              {libraryDocuments.length === 1 ? "" : "s"} in your library
+            </p>
+          </div>
+
+          <span className="rounded-full border border-app-border bg-surface px-3 py-1.5 text-xs font-medium text-muted-foreground">
+            PDF + TXT
+          </span>
+        </div>
 
         {loadError && (
-          <p role="alert" className="mb-3 text-sm text-red-600">
+          <p
+            role="alert"
+            className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200"
+          >
             {loadError}
           </p>
         )}
 
         {deleteError && (
-          <p role="alert" className="mb-3 text-sm text-red-600">
+          <p
+            role="alert"
+            className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200"
+          >
             {deleteError}
           </p>
         )}
 
         {isLoading ? (
-          <div className="animate-pulse rounded-xl border p-6">
-            Loading your documents...
+          <div
+            role="status"
+            aria-label="Loading documents"
+            className="space-y-3"
+          >
+            {[0, 1, 2].map((item) => (
+              <div
+                key={item}
+                className="flex animate-pulse gap-4 rounded-2xl border border-app-border bg-surface p-5"
+              >
+                <div className="h-12 w-12 shrink-0 rounded-xl bg-surface-muted" />
+                <div className="flex-1 space-y-3">
+                  <div className="h-4 w-2/3 rounded bg-surface-muted" />
+                  <div className="h-3 w-1/3 rounded bg-surface-muted" />
+                </div>
+              </div>
+            ))}
+            <span className="sr-only">
+              Loading your documents...
+            </span>
           </div>
         ) : libraryDocuments.length === 0 ? (
-          <div className="rounded-xl border bg-white p-8 text-center text-slate-500 dark:border-slate-700 dark:bg-slate-900">
-            No documents uploaded yet.
+          <div className="rounded-2xl border border-dashed border-app-border bg-surface p-8 text-center sm:p-12">
+            <span className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-muted text-muted-foreground">
+              <FileText
+                className="h-7 w-7"
+                aria-hidden="true"
+              />
+            </span>
+
+            <h4 className="text-lg font-semibold">
+              Your library is empty
+            </h4>
+
+            <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
+              Upload a PDF or TXT document above.
+              Once it is ready, you can preview it here
+              or ask questions in AI Chat.
+            </p>
           </div>
         ) : (
           <ul className="space-y-3">
             {libraryDocuments.map((doc) => (
               <li
                 key={doc.id}
-                className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"
+                className="rounded-2xl border border-app-border bg-surface p-4 shadow-sm transition-colors hover:border-primary sm:p-5"
               >
-                <div className="flex items-start gap-3">
-                  <FileText
-                    className="mt-1 h-6 w-6 shrink-0 text-blue-600"
-                    aria-hidden="true"
-                  />
+                <div className="flex min-w-0 items-start gap-3 sm:gap-4">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-on-primary-soft">
+                    <FileText
+                      className="h-5 w-5"
+                      aria-hidden="true"
+                    />
+                  </span>
 
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium">
+                    <p className="break-words text-sm font-semibold sm:text-base">
                       {doc.name}
                     </p>
 
-                    <p className="mt-1 text-xs text-slate-500">
+                    <p className="mt-1 text-xs text-muted-foreground">
                       {formatSize(doc.size)} ·{" "}
-                      {new Date(
-                        doc.uploadedAt
-                      ).toLocaleDateString()}
+                      {new Date(doc.uploadedAt).toLocaleDateString()}
                     </p>
 
                     <div
-                      className="mt-2 text-sm"
+                      className="mt-3"
                       aria-live="polite"
                     >
                       {doc.status === "ready" && (
-                        <span className="text-green-700 dark:text-green-400">
+                        <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">
                           Ready
                         </span>
                       )}
 
-                      {doc.status === "uploading" &&
-                        `Uploading ${doc.progress}%`}
+                      {doc.status === "uploading" && (
+                        <span className="text-sm font-medium text-muted-foreground">
+                          Uploading {doc.progress}%
+                        </span>
+                      )}
 
                       {doc.status === "processing" && (
-                        <span className="inline-flex items-center gap-2">
+                        <span className="inline-flex items-center gap-2 text-sm text-muted-foreground">
                           <LoaderCircle
                             className="h-4 w-4 animate-spin"
                             aria-hidden="true"
@@ -496,20 +560,8 @@ const libraryDocuments = documents.filter(
                           Saving file...
                         </span>
                       )}
-
-                      {doc.status === "error" && (
-                        <span className="inline-flex items-center gap-1 text-red-600">
-                          <AlertCircle
-                            className="h-4 w-4"
-                            aria-hidden="true"
-                          />
-                          {doc.error ?? "Upload failed"}
-                        </span>
-                      )}
                     </div>
-                      {doc.status === "ready" && (
-                        <DocumentTextPreview documentId={doc.id} />
-        )}
+
                     {doc.status === "uploading" && (
                       <div
                         role="progressbar"
@@ -517,15 +569,21 @@ const libraryDocuments = documents.filter(
                         aria-valuenow={doc.progress}
                         aria-valuemin={0}
                         aria-valuemax={100}
-                        className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200"
+                        className="mt-3 h-2 overflow-hidden rounded-full bg-surface-muted"
                       >
                         <div
-                          className="h-full bg-blue-600 transition-all"
+                          className="h-full rounded-full bg-primary transition-all"
                           style={{
                             width: `${doc.progress}%`,
                           }}
                         />
                       </div>
+                    )}
+
+                    {doc.status === "ready" && (
+                      <DocumentTextPreview
+                        documentId={doc.id}
+                      />
                     )}
                   </div>
 
@@ -539,12 +597,18 @@ const libraryDocuments = documents.filter(
                       doc.status === "uploading" ||
                       doc.status === "processing"
                     }
-                    className="rounded-lg p-2 text-slate-500 hover:bg-red-50 hover:text-red-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="shrink-0 rounded-xl border border-app-border p-2.5 text-muted-foreground transition-colors hover:border-red-300 hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-red-950 dark:hover:text-red-200"
                   >
                     {deletingId === doc.id ? (
-                      <LoaderCircle className="h-5 w-5 animate-spin" />
+                      <LoaderCircle
+                        className="h-5 w-5 animate-spin"
+                        aria-hidden="true"
+                      />
                     ) : (
-                      <Trash2 className="h-5 w-5" />
+                      <Trash2
+                        className="h-5 w-5"
+                        aria-hidden="true"
+                      />
                     )}
                   </button>
                 </div>
@@ -555,4 +619,5 @@ const libraryDocuments = documents.filter(
       </section>
     </div>
   );
+
 }
