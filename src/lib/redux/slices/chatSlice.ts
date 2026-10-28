@@ -5,7 +5,7 @@ export const MAX_CHAT_DOCUMENTS = 10;
 
 export interface ChatMessage {
   id: string;
-  role: "user" | "assistant";
+  role: "user" | "assistant" | "system";
   content: string;
   sources?: SourceCitation[];
   error?: string;
@@ -35,6 +35,46 @@ const chatSlice = createSlice({
   name: "chat",
   initialState,
   reducers: {
+    addSystemNotice(
+      state,
+      action: PayloadAction<{
+        sessionId: string;
+        messageId: string;
+        content: string;
+      }>
+    ) {
+      const session = state.sessions.find(
+        (item) => item.id === action.payload.sessionId
+      );
+
+      if (!session) return;
+
+      session.messages.push({
+        id: action.payload.messageId,
+        role: "system",
+        content: action.payload.content,
+      });
+    },
+    restoreChat(
+      state,
+      action: PayloadAction<{
+        sessions: ChatSession[];
+        activeSessionId: string | null;
+      }>
+    ) {
+      state.sessions = action.payload.sessions;
+
+      const activeExists = state.sessions.some(
+        (session) => session.id === action.payload.activeSessionId
+      );
+
+      state.activeSessionId = activeExists
+        ? action.payload.activeSessionId
+        : state.sessions[0]?.id ?? null;
+
+      // A network request cannot resume after refreshing the page.
+      state.streamingSessionId = null;
+    },
     createSession(
       state,
       action: PayloadAction<{
@@ -89,7 +129,7 @@ const chatSlice = createSlice({
       if (state.streamingSessionId === session.id) return;
       const exists = session.documentIds.includes(action.payload.documentId);
       if (action.payload.selected && !exists &&
-          session.documentIds.length < MAX_CHAT_DOCUMENTS) {
+        session.documentIds.length < MAX_CHAT_DOCUMENTS) {
         session.documentIds.push(action.payload.documentId);
       } else if (!action.payload.selected && exists) {
         session.documentIds = session.documentIds.filter(
@@ -197,6 +237,7 @@ const chatSlice = createSlice({
 });
 
 export const {
+  restoreChat,
   createSession,
   selectSession,
   setSessionDocuments,
@@ -207,6 +248,7 @@ export const {
   setAssistantSources,
   setAssistantError,
   finishAssistantMessage,
+  addSystemNotice
 } = chatSlice.actions;
 
 export default chatSlice.reducer;

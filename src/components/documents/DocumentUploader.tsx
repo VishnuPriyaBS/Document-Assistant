@@ -2,7 +2,6 @@
 "use client";
 
 import {
-  useEffect,
   useState,
   type ChangeEvent,
   type DragEvent,
@@ -19,24 +18,21 @@ import {
 
 import {
   useAppDispatch,
-  useAppSelector,
 } from "@/lib/redux/hooks";
 
 import {
-  setDocuments,
-  upsertDocument,
-  updateDocument,
   removeDocument,
 } from "@/lib/redux/slices/documentsSlice";
 
+import { useDocumentUpload } from "@/lib/documents/useDocumentUpload";
+import { useDocuments } from "@/lib/documents/useDocuments";
+
 import type {
   DocumentItem,
-  StoredDocument,
 } from "@/types/document";
 
 import DocumentTextPreview from "./DocumentTextPreview";
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 function formatSize(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
@@ -54,10 +50,8 @@ function getErrorMessage(error: unknown) {
 
 export default function DocumentUploader() {
   const dispatch = useAppDispatch();
-
-  const documents = useAppSelector(
-    (state) => state.documents.documents
-  );
+  const { handleFiles } = useDocumentUpload();
+  const { documents, isLoading, loadError } = useDocuments();
 
 const failedDocuments = documents.filter(
   (doc) => doc.status === "error"
@@ -68,203 +62,8 @@ const libraryDocuments = documents.filter(
 );
 
   const [isDragging, setIsDragging] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState("");
   const [deleteError, setDeleteError] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
-
-  // Load previously saved documents on page open
-  useEffect(() => {
-    let active = true;
-
-    async function loadDocuments() {
-      try {
-        const response = await fetch("/api/documents", {
-          cache: "no-store",
-        });
-
-        const result = (await response.json()) as {
-          documents?: StoredDocument[];
-          error?: string;
-        };
-
-        if (!response.ok || !result.documents) {
-          throw new Error(
-            result.error ?? "Unable to load documents."
-          );
-        }
-
-        if (active) {
-          dispatch(setDocuments(result.documents));
-        }
-      } catch (error) {
-        if (active) {
-          setLoadError(getErrorMessage(error));
-        }
-      } finally {
-        if (active) setIsLoading(false);
-      }
-    }
-
-    void loadDocuments();
-
-    return () => {
-      active = false;
-    };
-  }, [dispatch]);
-
-  function addRejectedFile(file: File, error: string) {
-    dispatch(
-      upsertDocument({
-        id: crypto.randomUUID(),
-        name: file.name,
-        size: file.size,
-        uploadedAt: new Date().toISOString(),
-        status: "error",
-        progress: 0,
-        error,
-      })
-    );
-  }
-
-  function uploadFile(file: File) {
-    const extension = file.name.split(".").pop()?.toLowerCase();
-
-    if (!extension || !["pdf", "txt"].includes(extension)) {
-      addRejectedFile(
-        file,
-        "Only PDF and TXT files are supported."
-      );
-      return;
-    }
-
-    if (file.size > MAX_FILE_SIZE) {
-      addRejectedFile(
-        file,
-        "File size must not exceed 10 MB."
-      );
-      return;
-    }
-
-    if (file.size === 0) {
-      addRejectedFile(file, "Cannot upload an empty file.");
-      return;
-    }
-
-    const temporaryId = crypto.randomUUID();
-
-    dispatch(
-      upsertDocument({
-        id: temporaryId,
-        name: file.name,
-        size: file.size,
-        uploadedAt: new Date().toISOString(),
-        status: "uploading",
-        progress: 0,
-      })
-    );
-
-    const formData = new FormData();
-    formData.append("file", file);
-
-    const xhr = new XMLHttpRequest();
-
-    xhr.open("POST", "/api/documents");
-    xhr.timeout = 60000;
-
-    // Real progress of bytes sent to the server
-    xhr.upload.addEventListener("progress", (event) => {
-      if (event.lengthComputable) {
-        const progress = Math.round(
-          (event.loaded / event.total) * 100
-        );
-
-        dispatch(
-          updateDocument({
-            id: temporaryId,
-            changes: { progress },
-          })
-        );
-      }
-    });
-
-    // Upload finished, waiting for server to save file
-    xhr.upload.addEventListener("load", () => {
-      dispatch(
-        updateDocument({
-          id: temporaryId,
-          changes: {
-            status: "processing",
-            progress: 100,
-          },
-        })
-      );
-    });
-
-    xhr.addEventListener("load", () => {
-      try {
-        const result = JSON.parse(xhr.responseText) as {
-          document?: StoredDocument;
-          error?: string;
-        };
-
-        if (xhr.status !== 201 || !result.document) {
-          throw new Error(
-            result.error ?? "Upload failed."
-          );
-        }
-
-        dispatch(removeDocument(temporaryId));
-
-        dispatch(
-          upsertDocument({
-            ...result.document,
-            progress: 100,
-          })
-        );
-      } catch (error) {
-        dispatch(
-          updateDocument({
-            id: temporaryId,
-            changes: {
-              status: "error",
-              error: getErrorMessage(error),
-            },
-          })
-        );
-      }
-    });
-
-    xhr.addEventListener("error", () => {
-      dispatch(
-        updateDocument({
-          id: temporaryId,
-          changes: {
-            status: "error",
-            error: "Network error. Please try again.",
-          },
-        })
-      );
-    });
-
-    xhr.addEventListener("timeout", () => {
-      dispatch(
-        updateDocument({
-          id: temporaryId,
-          changes: {
-            status: "error",
-            error: "Upload timed out. Please try again.",
-          },
-        })
-      );
-    });
-
-    xhr.send(formData);
-  }
-
-  function handleFiles(files: FileList | File[]) {
-    Array.from(files).forEach(uploadFile);
-  }
 
   function handleFileChange(
     event: ChangeEvent<HTMLInputElement>

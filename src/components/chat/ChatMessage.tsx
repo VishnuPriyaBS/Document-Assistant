@@ -1,5 +1,5 @@
 
-import { Bot, User, ExternalLink } from "lucide-react";
+import { Bot, User, ExternalLink, Info } from "lucide-react";
 
 import type {
   ChatMessage as ChatMessageType,
@@ -14,22 +14,44 @@ export default function ChatMessage({
   message,
   isStreaming = false,
 }: Props) {
+
+  if (message.role === "system") {
+    return (
+      <article
+        aria-label="System notice"
+        className="mx-auto flex max-w-xl items-start gap-2 rounded-xl border border-app-border bg-surface-muted px-4 py-3 text-sm text-muted-foreground"
+      >
+        <Info
+          aria-hidden="true"
+          className="mt-0.5 h-4 w-4 shrink-0"
+        />
+
+        <div>
+          <p className="text-xs font-semibold text-foreground">
+            System notice
+          </p>
+
+          <p className="mt-1 leading-6">
+            {message.content}
+          </p>
+        </div>
+      </article>
+    );
+  }
   const isUser = message.role === "user";
   const parts = message.content.split(/(\[S\d+\])/g);
 
   return (
     <article
-      className={`flex gap-3 ${
-        isUser ? "flex-row-reverse" : ""
-      }`}
+      className={`flex gap-3 ${isUser ? "flex-row-reverse" : ""
+        }`}
     >
       <div
         aria-hidden="true"
-        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
-          isUser
-            ? "bg-primary text-on-primary"
-            : "bg-primary-soft text-on-primary-soft"
-        }`}
+        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${isUser
+          ? "bg-primary text-on-primary"
+          : "bg-primary-soft text-on-primary-soft"
+          }`}
       >
         {isUser ? (
           <User className="h-5 w-5" />
@@ -45,11 +67,10 @@ export default function ChatMessage({
 
         {(message.content || isStreaming) && (
           <div
-            className={`rounded-2xl px-4 py-3 text-sm leading-7 shadow-sm ${
-              isUser
-                ? "bg-primary text-on-primary"
-                : "border border-app-border bg-surface-muted text-foreground"
-            }`}
+            className={`rounded-2xl px-4 py-3 text-sm leading-7 shadow-sm ${isUser
+              ? "bg-primary text-on-primary"
+              : "border border-app-border bg-surface-muted text-foreground"
+              }`}
           >
             <p className="whitespace-pre-wrap break-words">
               {parts.map((part, index) => {
@@ -77,18 +98,38 @@ export default function ChatMessage({
                 );
               })}
 
-              {isStreaming && (
+              {isStreaming && message.content.length > 0 && (
                 <span
                   aria-hidden="true"
                   className="ml-1 inline-block h-4 w-1 animate-pulse bg-primary align-middle"
                 />
               )}
             </p>
-
             {isStreaming && !message.content && (
-              <p className="mt-2 text-xs text-muted-foreground">
-                Searching your documents and preparing an answer...
-              </p>
+              <div className="flex items-center gap-3 py-2">
+                <span
+                  aria-hidden="true"
+                  className="inline-flex shrink-0 items-center gap-1"
+                >
+                  {[0, 150, 300].map((delay) => (
+                    <span
+                      key={delay}
+                      className="h-2 w-2 rounded-full bg-primary motion-safe:animate-bounce"
+                      style={{ animationDelay: `${delay}ms` }}
+                    />
+                  ))}
+                </span>
+
+                <div>
+                  <p className="text-sm font-medium text-foreground">
+                    Searching your documents…
+                  </p>
+
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Preparing a cited answer
+                  </p>
+                </div>
+              </div>
             )}
           </div>
         )}

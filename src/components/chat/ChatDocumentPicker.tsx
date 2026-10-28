@@ -1,18 +1,14 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type ChangeEvent, type DragEvent } from "react";
+import { useId, useRef, useState, type ChangeEvent, type DragEvent } from "react";
 import { AlertCircle, ChevronDown, ChevronUp, FileText, Paperclip, X } from "lucide-react";
-import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
+import { useAppDispatch } from "@/lib/redux/hooks";
 import {
-  removeDocument,
-  setDocuments,
-  updateDocument,
-  upsertDocument,
+  removeDocument
 } from "@/lib/redux/slices/documentsSlice";
 import { MAX_CHAT_DOCUMENTS } from "@/lib/redux/slices/chatSlice";
-import type { StoredDocument } from "@/types/document";
-
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
+import { useDocumentUpload } from "@/lib/documents/useDocumentUpload";
+import { useDocuments } from "@/lib/documents/useDocuments";
 
 interface Props {
   selectedIds: string[];
@@ -20,143 +16,27 @@ interface Props {
   onToggle: (documentId: string, selected: boolean) => void;
 }
 
-function getError(error: unknown): string {
-  return error instanceof Error ? error.message : "Something went wrong.";
-}
-
 export default function ChatDocumentPicker({ selectedIds, locked, onToggle }: Props) {
   const dispatch = useAppDispatch();
-  const documents = useAppSelector((state) => state.documents.documents);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const { documents, isLoading, loadError } = useDocuments(); const inputRef = useRef<HTMLInputElement>(null);
   const sectionId = useId();
 
   const [expanded, setExpanded] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState("");
 
+
+  const { handleFiles } = useDocumentUpload({
+    disabled: locked || isLoading,
+    onUploaded: (document) => {
+      onToggle(document.id, true);
+    },
+  });
   const ready = documents.filter((doc) => doc.status === "ready");
   const pending = documents.filter(
     (doc) => doc.status === "uploading" || doc.status === "processing"
   );
   const failed = documents.filter((doc) => doc.status === "error");
   const selectedDocuments = ready.filter((doc) => selectedIds.includes(doc.id));
-
-  useEffect(() => {
-    let active = true;
-    async function load() {
-      try {
-        const response = await fetch("/api/documents", { cache: "no-store" });
-        const result = (await response.json()) as {
-          documents?: StoredDocument[];
-          error?: string;
-        };
-        if (!response.ok || !result.documents) {
-          throw new Error(result.error ?? "Unable to load documents.");
-        }
-        if (active) dispatch(setDocuments(result.documents));
-      } catch (error) {
-        if (active) setLoadError(getError(error));
-      } finally {
-        if (active) setIsLoading(false);
-      }
-    }
-    void load();
-    return () => { active = false; };
-  }, [dispatch]);
-
-  function rejectFile(file: File, error: string) {
-    dispatch(upsertDocument({
-      id: crypto.randomUUID(),
-      name: file.name,
-      size: file.size,
-      uploadedAt: new Date().toISOString(),
-      status: "error",
-      progress: 0,
-      error,
-    }));
-  }
-
-  function uploadFile(file: File) {
-    if (locked || isLoading) return;
-    const extension = file.name.split(".").pop()?.toLowerCase();
-    if (extension !== "pdf" && extension !== "txt") {
-      rejectFile(file, "Only PDF and TXT files are supported.");
-      return;
-    }
-    if (!file.size || file.size > MAX_FILE_SIZE) {
-      rejectFile(file, file.size === 0 ? "File is empty." : "Maximum size is 10 MB.");
-      return;
-    }
-
-    const temporaryId = crypto.randomUUID();
-    dispatch(upsertDocument({
-      id: temporaryId,
-      name: file.name,
-      size: file.size,
-      uploadedAt: new Date().toISOString(),
-      status: "uploading",
-      progress: 0,
-    }));
-
-    const formData = new FormData();
-    formData.append("file", file);
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", "/api/documents");
-    xhr.timeout = 60000;
-
-    xhr.upload.addEventListener("progress", (event) => {
-      if (event.lengthComputable) {
-        dispatch(updateDocument({
-          id: temporaryId,
-          changes: { progress: Math.round((event.loaded / event.total) * 100) },
-        }));
-      }
-    });
-    xhr.upload.addEventListener("load", () => {
-      dispatch(updateDocument({
-        id: temporaryId,
-        changes: { status: "processing", progress: 100 },
-      }));
-    });
-    xhr.addEventListener("load", () => {
-      try {
-        const result = JSON.parse(xhr.responseText) as {
-          document?: StoredDocument;
-          error?: string;
-        };
-        if (xhr.status !== 201 || !result.document) {
-          throw new Error(result.error ?? "Upload failed.");
-        }
-        dispatch(removeDocument(temporaryId));
-        dispatch(upsertDocument({ ...result.document, progress: 100 }));
-        // Attach the saved file to the new/empty conversation.
-        onToggle(result.document.id, true);
-      } catch (error) {
-        dispatch(updateDocument({
-          id: temporaryId,
-          changes: { status: "error", error: getError(error) },
-        }));
-      }
-    });
-    xhr.addEventListener("error", () => {
-      dispatch(updateDocument({
-        id: temporaryId,
-        changes: { status: "error", error: "Network error during upload." },
-      }));
-    });
-    xhr.addEventListener("timeout", () => {
-      dispatch(updateDocument({
-        id: temporaryId,
-        changes: { status: "error", error: "Upload timed out." },
-      }));
-    });
-    xhr.send(formData);
-  }
-
-  function handleFiles(files: FileList | File[]) {
-    Array.from(files).forEach(uploadFile);
-  }
 
   function handleInputChange(event: ChangeEvent<HTMLInputElement>) {
     if (event.target.files) handleFiles(event.target.files);
@@ -172,11 +52,10 @@ export default function ChatDocumentPicker({ selectedIds, locked, onToggle }: Pr
 
   return (
     <div
-      className={`shrink-0 border-b border-app-border bg-surface-muted p-3 sm:p-4 ${
-        isDragging
+      className={`shrink-0 border-b border-app-border bg-surface-muted p-3 sm:p-4 ${isDragging
           ? "ring-2 ring-inset ring-primary"
           : ""
-      }`}
+        }`}
       onDragOver={(event) => {
         event.preventDefault();
         if (!locked && !isLoading) {
@@ -435,7 +314,7 @@ export default function ChatDocumentPicker({ selectedIds, locked, onToggle }: Pr
                     locked ||
                     (!selectedIds.includes(doc.id) &&
                       selectedIds.length >=
-                        MAX_CHAT_DOCUMENTS)
+                      MAX_CHAT_DOCUMENTS)
                   }
                   onChange={(event) =>
                     onToggle(

@@ -130,4 +130,25 @@ describe("ChatMessage", () => {
 
     expect(results.violations).toEqual([]);
   });
+  it("renders a distinct system notice", () => {
+  render(
+    <ChatMessage
+      message={{
+        id: "notice-1",
+        role: "system",
+        content: "This conversation uses selected documents.",
+      }}
+    />
+  );
+
+  expect(
+    screen.getByRole("article", { name: "System notice" })
+  ).toHaveTextContent(
+    "This conversation uses selected documents."
+  );
+
+  expect(
+    screen.queryByText("AI Assistant")
+  ).not.toBeInTheDocument();
+});
 });
